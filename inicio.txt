@@ -1,0 +1,108 @@
+# 🤖 Tradutor de Libras em Tempo Real com MediaPipe e scikit-learn
+
+Este projeto é um protótipo de TCC (Trabalho de Conclusão de Curso) que utiliza Visão Computacional para reconhecer e traduzir sinais estáticos da Língua Brasileira de Sinais (Libras) em tempo real.
+
+O sistema usa a biblioteca MediaPipe do Google para detectar os 21 pontos-chave (landmarks) da mão e um classificador k-Nearest Neighbors (k-NN) treinado com scikit-learn para identificar o sinal.
+
+## 🛠️ Tecnologias Utilizadas
+
+* **Python 3.10+**
+* **OpenCV:** Para captura e manipulação da imagem da webcam.
+* **MediaPipe:** Para detecção e rastreamento da mão em tempo real.
+* **scikit-learn:** Para treinar o modelo de classificação (k-NN).
+* **Pandas:** Para manipulação dos dados durante o treinamento.
+* **Numpy:** Para processamento numérico e normalização.
+
+---
+
+## 🚀 Como Executar o Projeto
+
+Siga este passo a passo para configurar e rodar o tradutor.
+
+### 1. Preparação do Ambiente
+
+1.  **Clone o repositório** (ou baixe os arquivos para uma pasta).
+2.  **(Opcional, mas recomendado)** Crie um ambiente virtual:
+    ```bash
+    python -m venv venv
+    .\venv\Scripts\activate
+    ```
+3.  **Instale as dependências:**
+    ```bash
+    # Instala o scikit-learn e o pandas
+    pip install scikit-learn pandas
+    
+    # Instala o MediaPipe
+    pip install mediapipe
+    
+    # Instala o Numpy (versão específica para compatibilidade)
+    pip install numpy==1.26.4
+    
+    # Instala o OpenCV (versão contrib, que inclui a UI)
+    pip install opencv-contrib-python
+    ```
+
+### 2. Passo a Passo: Treinando seu Próprio Modelo
+
+Para que o tradutor funcione, você precisa primeiro ensiná-lo. O processo é dividido em 3 scripts:
+
+#### Passo 2.1: Coletar Dados (coletor_dados.py)
+
+Este script abre a webcam e salva os pontos da sua mão em um arquivo `hand_data.csv` toda vez que você pressiona uma tecla.
+
+1.  **Abra o arquivo `coletor_dados.py`** e edite a lista `LABELS = []` para incluir os sinais que você quer ensinar (ex: 'A', 'B', 'C', 'L', 'V', 'N').
+    * **Importante:** Inclua uma classe 'N' (de Nulo) para gestos aleatórios ou "fundo", para evitar previsões erradas.
+2.  **Execute o script:**
+    ```bash
+    python coletor_dados.py
+    ```
+3.  **Colete os dados:**
+    * Faça o sinal 'A' na frente da câmera e aperte a tecla 'a' várias vezes (50-100 vezes).
+    * Varie o ângulo, a posição e a iluminação.
+    * Repita para todos os seus `LABELS`.
+4.  Pressione **'q'** para sair.
+
+#### Passo 2.2: Treinar o Modelo (treinar_modelo.py)
+
+Este script lê o arquivo `hand_data.csv` e usa Machine Learning para criar um "cérebro" (modelo) capaz de diferenciar os sinais.
+
+1.  **Execute o script:**
+    ```bash
+    python treinar_modelo.py
+    ```
+2.  O script irá ler os dados, treinar o modelo e imprimir a acurácia (Ex: `Acurácia: 99.50%`).
+3.  Ao final, ele salvará o modelo treinado em um arquivo chamado `hand_model.joblib`.
+
+#### Passo 2.3: Rodar o Tradutor (tradutor_libras.py)
+
+Este é o programa final! Ele carrega o `hand_model.joblib` e o usa para traduzir o que sua mão faz na webcam em tempo real.
+
+1.  **Execute o script:**
+    ```bash
+    python tradutor_libras.py
+    ```
+2.  Coloque sua mão na frente da câmera e faça os sinais que você treinou. A tradução aparecerá no canto da tela.
+3.  Pressione **'q'** para sair.
+
+---
+
+## 📂 Estrutura dos Arquivos
+
+* `coletor_dados.py`: Script para capturar e salvar os dados de treinamento.
+* `treinar_modelo.py`: Script que treina o modelo de ML com os dados coletados.
+* `tradutor_libras.py`: Aplicação principal que executa a tradução em tempo real.
+* `hand_data.csv`: (Gerado) Banco de dados com os landmarks das mãos.
+* `hand_model.joblib`: (Gerado) O modelo de k-NN treinado e salvo.
+* `README.md`: Este arquivo.
+
+---
+
+## ⚠️ Arquivo `.gitignore` Sugerido
+
+Para evitar enviar arquivos desnecessários (como os dados que você coletou ou o modelo treinado) para o Git, crie um arquivo chamado `.gitignore` e cole o seguinte conteúdo nele:
+
+python coletor_dados.py
+python treinar_modelo.py
+python tradutor_libras.py
+
+
