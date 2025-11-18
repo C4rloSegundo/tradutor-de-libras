@@ -67,7 +67,8 @@ while cap.isOpened():
             for point in points:
                 data_row.append(point.x - min_x)
                 data_row.append(point.y - min_y)
-            
+                data_row.append(point.z)
+
             # 4. Transformar para o formato que o modelo espera (Numpy array 2D)
             # Precisamos usar [data_row] para simular "uma amostra"
             data_to_predict = np.array([data_row])

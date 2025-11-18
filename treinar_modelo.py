@@ -4,9 +4,14 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score
 import joblib # Para salvar o modelo
 
-# 1. Carregar os dados
-DATA_FILE = 'hand_data.csv'
-data = pd.read_csv(DATA_FILE)
+
+# 1. Carregar os dados de todos os arquivos da pasta dados_letras
+import glob
+import os
+DATA_DIR = 'dados_letras'
+csv_files = glob.glob(os.path.join(DATA_DIR, '*.csv'))
+dataframes = [pd.read_csv(f) for f in csv_files]
+data = pd.concat(dataframes, ignore_index=True)
 
 print(f"Dados carregados. Total de {len(data)} amostras.")
 print("Contagem de amostras por classe:")

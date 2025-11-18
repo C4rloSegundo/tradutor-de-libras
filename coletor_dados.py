@@ -13,25 +13,31 @@ hands = mp_hands.Hands(
     min_tracking_confidence=0.5
 )
 
-# Configurações do arquivo de dados
-DATA_FILE = 'hand_data.csv'
-LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'I', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'Y', '/'] # <-- ADICIONE MAIS LETRAS/SINAIS AQUI
-print(f"Pressione as teclas: {', '.join(LABELS)} para salvar os dados.")
-print("Pressione '0' para sair.")
 
-# Cria o arquivo CSV e o cabeçalho se ele não existir
-file_exists = os.path.isfile(DATA_FILE)
-with open(DATA_FILE, mode='a', newline='') as f:
-    writer = csv.writer(f)
-    if not file_exists:
-        # Cria o cabeçalho (label + 42 features: x0, y0, x1, y1, ...)
-        header = ['label']
-        for i in range(21):
-            header += [f'x{i}', f'y{i}']
-        writer.writerow(header)
+# Configurações do diretório e labels
+DATA_DIR = 'dados_letras'
+LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'I', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'Y', '/'] # <-- ADICIONE MAIS LETRAS/SINAIS AQUI
+
+print(f"Pressione as teclas: {', '.join(LABELS)} para selecionar a letra.")
+print("Pressione '0' para sair.")
+print("Os dados serão coletados continuamente para a letra selecionada.")
+
+# Função para garantir que o arquivo da letra existe e tem cabeçalho
+def garantir_arquivo_letra(letra):
+    file_path = os.path.join(DATA_DIR, f'{letra}.csv')
+    if not os.path.isfile(file_path):
+        with open(file_path, mode='w', newline='') as f:
+            writer = csv.writer(f)
+            header = ['label']
+            for i in range(21):
+                header += [f'x{i}', f'y{i}', f'z{i}']
+            writer.writerow(header)
+    return file_path
 
 # Inicia a captura de vídeo
 cap = cv2.VideoCapture(0)
+
+selected_label = None
 
 while cap.isOpened():
     success, image = cap.read()
@@ -55,27 +61,24 @@ while cap.isOpened():
     # Mostra a imagem
     cv2.imshow('Coletor de Dados - MediaPipe', image_output)
 
-    # --- Lógica de Coleta ---
     key = cv2.waitKey(5) & 0xFF
-    
-    # Sair com 'q'
+
+    # Sair com '0'
     if key == ord('0'):
         break
-        
-    # Converte a tecla pressionada para maiúscula
-    key_char = chr(key).upper()
 
-    # Se a tecla pressionada for uma das nossas LABELS e uma mão for detectada
-    if key_char in LABELS and hand_landmarks:
+    # Seleciona a letra se pressionada
+    if key != 255:  # 255 = nenhuma tecla pressionada
+        key_char = chr(key).upper()
+        if key_char in LABELS:
+            selected_label = key_char
+            print(f'Letra selecionada: {selected_label}')
+
+    # Coleta dados continuamente para a letra selecionada
+    if selected_label and hand_landmarks:
         try:
-            # --- Normalização dos Dados ---
-            # O MediaPipe já fornece coordenadas (x,y) normalizadas [0.0, 1.0]
-            # Vamos torná-las relativas à própria mão (ao invés da tela)
-            
             # 1. Pega todos os pontos
             points = hand_landmarks.landmark
-            
-            # 2. Encontra o ponto (x,y) mínimo (o canto "superior esquerdo" da mão)
             x_coords = [point.x for point in points]
             y_coords = [point.y for point in points]
             min_x = min(x_coords)
@@ -87,16 +90,18 @@ while cap.isOpened():
             for point in points:
                 data_row.append(point.x - min_x)
                 data_row.append(point.y - min_y)
-            
-            # 4. Adiciona o rótulo (label) no início
-            data_row.insert(0, key_char)
+                data_row.append(point.z)  # Adiciona Z sem normalizar (MediaPipe já normaliza)
 
-            # 5. Salva a linha no arquivo CSV
-            with open(DATA_FILE, mode='a', newline='') as f:
+            # 4. Adiciona o rótulo (label) no início
+            data_row.insert(0, selected_label)
+
+            # 5. Salva a linha no arquivo CSV da letra
+            file_path = garantir_arquivo_letra(selected_label)
+            with open(file_path, mode='a', newline='') as f:
                 writer = csv.writer(f)
                 writer.writerow(data_row)
-            
-            print(f"Salvo! Dados para a letra: {key_char}")
+
+            print(f"Salvo! Dados para a letra: {selected_label} em {file_path}")
 
         except Exception as e:
             print(f"Erro ao processar landmarks: {e}")
