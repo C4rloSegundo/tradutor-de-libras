@@ -1,5 +1,9 @@
-pandas
-scikit-learn
+opencv-python
 mediapipe
-opencv-contrib-python
-numpy==1.26.4
+scikit-learn
+joblib
+numpy
+pandas
+pyttsx3
+matplotlib
+seaborn

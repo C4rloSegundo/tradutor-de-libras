@@ -1,54 +1,88 @@
 import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.metrics import accuracy_score
-import joblib # Para salvar o modelo
-
-
-# 1. Carregar os dados de todos os arquivos da pasta dados_letras
 import glob
 import os
+import joblib
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+
+# Configurações
 DATA_DIR = 'dados_letras'
-csv_files = glob.glob(os.path.join(DATA_DIR, '*.csv'))
-dataframes = [pd.read_csv(f) for f in csv_files]
-data = pd.concat(dataframes, ignore_index=True)
-
-print(f"Dados carregados. Total de {len(data)} amostras.")
-print("Contagem de amostras por classe:")
-print(data['label'].value_counts())
-
-# 2. Separar features (X) e rótulos (y)
-# X são as 42 colunas de coordenadas
-X = data.drop('label', axis=1) 
-# y é a coluna 'label'
-y = data['label']
-
-# 3. Dividir os dados em conjuntos de Treino e Teste
-# 80% para treino, 20% para teste
-# random_state=42 garante que a divisão seja sempre a mesma (reprodutibilidade)
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42, stratify=y
-)
-
-print(f"\nDividindo dados: {len(X_train)} para treino, {len(X_test)} para teste.")
-
-# 4. Treinar o modelo (k-Nearest Neighbors)
-# n_neighbors=5 significa que ele vai olhar para os 5 "vizinhos" mais próximos
-# para decidir qual é o sinal. Você pode ajustar esse número.
-model = KNeighborsClassifier(n_neighbors=5)
-
-print("Iniciando treinamento do modelo k-NN...")
-model.fit(X_train, y_train)
-print("Treinamento concluído.")
-
-# 5. Testar o modelo
-y_pred = model.predict(X_test)
-acc = accuracy_score(y_test, y_pred)
-
-print(f"\n--- Resultados ---")
-print(f"Acurácia do modelo no conjunto de teste: {acc * 100:.2f}%")
-
-# 6. Salvar o modelo treinado
 MODEL_FILE = 'hand_model.joblib'
-joblib.dump(model, MODEL_FILE)
-print(f"\nModelo salvo com sucesso como '{MODEL_FILE}'")
+CONFUSION_MATRIX_FILE = 'matriz_confusao.png'
+
+def carregar_dados():
+    print("Carregando dados CSV...")
+    # Pega todos os arquivos .csv na pasta dados_letras
+    csv_files = glob.glob(os.path.join(DATA_DIR, '*.csv'))
+    
+    if not csv_files:
+        print(f"ERRO: Nenhum arquivo CSV encontrado em '{DATA_DIR}'. Rode o coletor_dados.py primeiro!")
+        exit()
+
+    dataframes = []
+    for f in csv_files:
+        df = pd.read_csv(f)
+        dataframes.append(df)
+    
+    # Junta tudo num tabelão só
+    full_data = pd.concat(dataframes, ignore_index=True)
+    print(f"   Total de amostras: {len(full_data)}")
+    print(f"   Classes encontradas: {full_data['label'].unique()}")
+    return full_data
+
+def treinar():
+    data = carregar_dados()
+
+    # 2. Preparação
+    X = data.drop('label', axis=1) # As coordenadas (Features)
+    y = data['label']              # A letra (Target)
+
+    # Separa 20% para teste (validação)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y
+    )
+
+    # 3. Treinamento (KNN)
+    print("\nTreinando modelo KNN...")
+    model = KNeighborsClassifier(n_neighbors=5)
+    model.fit(X_train, y_train)
+
+    # 4. Avaliação
+    print("Avaliando modelo...")
+    y_pred = model.predict(X_test)
+    acuracia = accuracy_score(y_test, y_pred)
+    print(f"   Acurácia Final: {acuracia * 100:.2f}%")
+
+    # --- GERAÇÃO DE GRÁFICOS PARA O TCC ---
+    print("\nGerando Matriz de Confusão para o TCC...")
+    
+    # Cria a matriz
+    cm = confusion_matrix(y_test, y_pred)
+    classes = sorted(y.unique()) # Garante ordem alfabética
+
+    # Desenha o gráfico
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
+                xticklabels=classes, yticklabels=classes)
+    
+    plt.title(f'Matriz de Confusão (Acurácia: {acuracia*100:.1f}%)')
+    plt.ylabel('Letra Real')
+    plt.xlabel('Previsão do Modelo')
+    
+    # Salva a imagem
+    plt.savefig(CONFUSION_MATRIX_FILE)
+    print(f"   Gráfico salvo como '{CONFUSION_MATRIX_FILE}'. Coloque isso no seu PDF!")
+    
+    # (Opcional) Mostra na tela
+    # plt.show() 
+
+    # 5. Salvar Modelo
+    joblib.dump(model, MODEL_FILE)
+    print(f"\nSUCESSO: Modelo salvo em '{MODEL_FILE}'")
+
+if __name__ == "__main__":
+    treinar()
