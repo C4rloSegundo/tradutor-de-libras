@@ -9,7 +9,7 @@ DATA_DIR = 'dados_letras'
 if not os.path.exists(DATA_DIR):
     os.makedirs(DATA_DIR)
 
-LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'I', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'Y'] 
+LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'I', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
 
 def garantir_arquivo_letra(letra):
     file_path = os.path.join(DATA_DIR, f'{letra}.csv')

@@ -10,7 +10,7 @@ class ReconhecerSinalUseCase:
     def __init__(self, classificador: IClassificador):
         self.classificador = classificador
         self.buffer_letras = []
-        self.LIMITE_BUFFER = 15
+        self.LIMITE_BUFFER = 30
         self.letra_atual = ""
         self.contagem = 0
 
