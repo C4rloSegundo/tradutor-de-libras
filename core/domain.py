@@ -3,18 +3,37 @@ from typing import List
 
 @dataclass
 class Gesto:
+    """Representa um gesto classificado.
+    
+    Attributes:
+        nome: Letra ou símbolo reconhecido (A-Z).
+        confianca: Nível de confiança da predição (0.0 a 1.0).
+    """
     nome: str
     confianca: float = 0.0
 
 @dataclass
 class MaoDetectada:
-    # Representa os dados puros da mão (21 pontos x, y, z)
+    """Representa uma mão detectada com seus landmarks.
+    
+    Attributes:
+        pontos: Lista de coordenadas (x, y, z) dos 21 pontos da mão.
+                Total de 63 valores (21 pontos × 3 coordenadas).
+    """
     pontos: List[float] 
     
     def normalizar(self) -> List[float]:
-        """Regra de negócio: Normalização é intrínseca ao domínio para garantir invariância."""
-        # Lógica de subtrair min_x e min_y vem pra cá
-        if not self.pontos: return []
+        """Normaliza os pontos da mão para invariância de posição.
+        
+        A normalização subtrai as coordenadas mínimas (x, y) para que
+        o gesto seja reconhecido independentemente da posição na tela.
+        
+        Returns:
+            Lista normalizada de coordenadas [x0, y0, z0, x1, y1, z1, ...].
+            Lista vazia se não houver pontos.
+        """
+        if not self.pontos:
+            return []
         
         # Reconstrói estrutura (x, y, z) para calcular min
         pontos_xyz = [self.pontos[i:i+3] for i in range(0, len(self.pontos), 3)]

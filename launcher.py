@@ -3,14 +3,21 @@ from tkinter import ttk, messagebox
 import subprocess
 import sys
 import threading
+import os
+import config
 
 class LauncherTCC:
+    """Interface gráfica para lançar os componentes do sistema."""
+    
     def __init__(self, root):
         self.root = root
-        self.root.title("Tradutor de Libras - Central de Controle")
-        self.root.geometry("550x500")
+        self.root.title(config.LAUNCHER_TITLE)
+        self.root.geometry(f"{config.LAUNCHER_WIDTH}x{config.LAUNCHER_HEIGHT}")
         self.root.resizable(False, False)
         self.root.configure(bg='#f0f0f0')
+        
+        # Detecta o Python correto (venv ou sistema)
+        self.python_path = self._get_python_executable()
         
         # Estilização
         style = ttk.Style()
@@ -64,6 +71,25 @@ class LauncherTCC:
                                   anchor=tk.W, bg='white', fg='#27ae60', font=('Helvetica', 9))
         self.lbl_status.pack(side=tk.BOTTOM, fill=tk.X, ipady=5)
 
+    def _get_python_executable(self):
+        """Detecta o executável Python correto (venv ou sistema)."""
+        # Verifica se há um venv na pasta
+        venv_paths = [
+            os.path.join(os.getcwd(), '.venv', 'Scripts', 'python.exe'),  # Windows
+            os.path.join(os.getcwd(), 'venv', 'Scripts', 'python.exe'),   # Windows alternativo
+            os.path.join(os.getcwd(), '.venv', 'bin', 'python'),          # Linux/Mac
+            os.path.join(os.getcwd(), 'venv', 'bin', 'python')            # Linux/Mac alternativo
+        ]
+        
+        for venv_path in venv_paths:
+            if os.path.isfile(venv_path):
+                print(f"✓ Usando Python do ambiente virtual: {venv_path}")
+                return venv_path
+        
+        # Se não encontrar venv, usa o Python atual
+        print(f"⚠ Usando Python do sistema: {sys.executable}")
+        return sys.executable
+
     def rodar_script(self, script_name, esperar=False):
         """Roda scripts externos usando o mesmo interpretador Python atual"""
         nome_amigavel = {
@@ -74,14 +100,14 @@ class LauncherTCC:
         self.lbl_status.config(text=f"⏳ Iniciando {nome_amigavel.get(script_name, script_name)}...", fg="#3498db")
         
         try:
-            # sys.executable garante que usamos o python do venv
+            # Usa o Python correto (venv ou sistema)
             if esperar:
                 # Se for esperar (treinamento), roda e captura o output
-                processo = subprocess.run([sys.executable, script_name], capture_output=True, text=True)
+                processo = subprocess.run([self.python_path, script_name], capture_output=True, text=True)
                 return processo
             else:
                 # Se não for esperar (coletor/main), abre em paralelo
-                subprocess.Popen([sys.executable, script_name])
+                subprocess.Popen([self.python_path, script_name])
                 self.lbl_status.config(text=f"✓ {nome_amigavel.get(script_name, script_name)} em execução", fg="#27ae60")
         
         except Exception as e:

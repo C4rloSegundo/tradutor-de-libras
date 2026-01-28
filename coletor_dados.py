@@ -1,18 +1,32 @@
 import cv2
 import csv
 import os
-import time
+import logging
 from adapters.mediapipe_adapter import MediaPipeAdapter
+import config
 
-# Configurações
-DATA_DIR = 'dados_letras'
-if not os.path.exists(DATA_DIR):
-    os.makedirs(DATA_DIR)
+# Configurar logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
-LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'I', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'Y'] 
+# Criar diretório de dados se não existir
+if not os.path.exists(config.DATA_DIR):
+    os.makedirs(config.DATA_DIR)
+    logger.info(f"Diretório criado: {config.DATA_DIR}")
 
 def garantir_arquivo_letra(letra):
-    file_path = os.path.join(DATA_DIR, f'{letra}.csv')
+    """Garante que o arquivo CSV da letra existe com header correto.
+    
+    Args:
+        letra: Letra do alfabeto (A-Z).
+        
+    Returns:
+        Caminho completo do arquivo CSV.
+    """
+    file_path = os.path.join(config.DATA_DIR, f'{letra}.csv')
     if not os.path.isfile(file_path):
         with open(file_path, mode='w', newline='') as f:
             writer = csv.writer(f)
@@ -20,82 +34,128 @@ def garantir_arquivo_letra(letra):
             for i in range(21):
                 header += [f'x{i}', f'y{i}', f'z{i}']
             writer.writerow(header)
+        logger.info(f"Arquivo criado: {file_path}")
     return file_path
 
 def main():
-    print("--- INICIANDO COLETOR DE DADOS ---")
-    print("1. Carregando MediaPipe Adapter...")
-    detector = MediaPipeAdapter()
+    """Função principal do coletor de dados."""
+    logger.info("=" * 50)
+    logger.info("INICIANDO COLETOR DE DADOS DE LIBRAS")
+    logger.info("=" * 50)
     
-    print("2. Tentando acessar a Webcam (Indice 0)...")
-    cap = cv2.VideoCapture(0)
-
-    # Verifica se a câmera abriu mesmo
-    if not cap.isOpened():
-        print("ERRO CRÍTICO: Não foi possível abrir a câmera!")
-        print("Tentativa: Verifique se outra aplicação está usando a webcam.")
-        print("Tentativa: Tente mudar cv2.VideoCapture(0) para cv2.VideoCapture(1) no código.")
-        return
-
-    selected_label = None
-    print(f"SUCESSO: Câmera aberta!")
-    print(f"Comandos: Teclas A-Y para gravar, ESPAÇO para pausar, 0 para sair.")
-
-    while cap.isOpened():
-        success, image = cap.read()
+    try:
+        logger.info("Carregando MediaPipe Adapter...")
+        detector = MediaPipeAdapter()
         
-        # Correção do Bug do Loop Infinito:
-        if not success:
-            print("AVISO: Falha ao ler quadro da câmera (frame vazio).")
-            continue
+        logger.info(f"Tentando acessar câmera (index {config.CAMERA_INDEX})...")
+        cap = cv2.VideoCapture(config.CAMERA_INDEX)
 
-        image = cv2.flip(image, 1)
+        if not cap.isOpened():
+            logger.error("Não foi possível abrir a câmera")
+            print("\nERRO CRÍTICO: Não foi possível abrir a câmera!")
+            print("Soluções:")
+            print("  1. Verifique se outra aplicação está usando a webcam")
+            print("  2. Tente mudar CAMERA_INDEX no config.py")
+            return
 
-        try:
-            mao_detectada, raw_results = detector.processar(image)
-            detector.desenhar(image, raw_results)
-        except Exception as e:
-            print(f"Erro no processamento: {e}")
-
-        # Interface
-        status_text = f"Gravando: {selected_label}" if selected_label else "PAUSADO (Selecione uma letra)"
-        color = (0, 0, 255) if selected_label else (255, 0, 0)
+        selected_label = None
+        amostras_gravadas = {letra: 0 for letra in config.LABELS}
         
-        cv2.putText(image, status_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 2)
-        cv2.imshow('Coletor Clean Arch', image)
+        logger.info("Câmera aberta com sucesso!")
+        print("\n" + "=" * 50)
+        print("COLETOR DE DADOS - Alfabeto de Libras")
+        print("=" * 50)
+        print(f"Letras disponíveis: {', '.join(config.LABELS)}")
+        print("\nComandos:")
+        print("  [A-Y]    - Iniciar gravação da letra")
+        print("  [ESPAÇO] - Pausar gravação")
+        print("  [0]      - Sair e salvar")
+        print("=" * 50 + "\n")
 
-        # Captura de Teclado
-        key = cv2.waitKey(5) & 0xFF
-        if key == ord('0'): 
-            break
-        elif key != 255:
-            char = chr(key).upper()
-            if char in LABELS:
-                selected_label = char
-                print(f"--> GRAVANDO: Letra {selected_label}")
-            elif key == ord(' '): 
-                selected_label = None
-                print("--> PAUSADO")
+        while cap.isOpened():
+            success, image = cap.read()
+            
+            if not success:
+                logger.warning("Falha ao ler frame da câmera")
+                continue
 
-        if selected_label and mao_detectada.pontos:
+            image = cv2.flip(image, 1)
+
             try:
-                dados_normalizados = mao_detectada.normalizar()
-                linha_csv = [selected_label] + dados_normalizados
-                
-                file_path = garantir_arquivo_letra(selected_label)
-                with open(file_path, mode='a', newline='') as f:
-                    writer = csv.writer(f)
-                    writer.writerow(linha_csv)
-                
-                # Feedback visual (bolinha verde piscando)
-                cv2.circle(image, (30, 60), 10, (0, 255, 0), -1)
-                
+                mao_detectada, raw_results = detector.processar(image)
+                detector.desenhar(image, raw_results)
             except Exception as e:
-                print(f"Erro ao salvar: {e}")
+                logger.error(f"Erro no processamento: {e}")
 
-    cap.release()
-    cv2.destroyAllWindows()
-    print("Coletor finalizado.")
+            # Interface
+            altura, largura = image.shape[:2]
+            cv2.rectangle(image, (0, 0), (largura, 80), (50, 50, 50), -1)
+            
+            if selected_label:
+                cv2.putText(image, f"GRAVANDO: {selected_label}", (10, 35), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 1.2, config.COLOR_RED, 3)
+                cv2.putText(image, f"Amostras: {amostras_gravadas[selected_label]}", (10, 65), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, config.COLOR_YELLOW, 2)
+            else:
+                cv2.putText(image, "PAUSADO - Pressione uma letra", (10, 40), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.9, config.COLOR_BLUE, 2)
+            
+            cv2.imshow('Coletor de Dados - Libras', image)
+
+            # Captura de Teclado
+            key = cv2.waitKey(5) & 0xFF
+            if key == ord('0'): 
+                logger.info("Encerrando por comando do usuário")
+                break
+            elif key != 255:
+                char = chr(key).upper()
+                if char in config.LABELS:
+                    selected_label = char
+                    logger.info(f"Gravando letra: {selected_label}")
+                    print(f"\n> GRAVANDO: {selected_label}")
+                elif key == ord(' '): 
+                    selected_label = None
+                    logger.info("Gravação pausada")
+                    print("\n> PAUSADO")
+
+            # Salvar dados
+            if selected_label and mao_detectada.pontos:
+                try:
+                    dados_normalizados = mao_detectada.normalizar()
+                    linha_csv = [selected_label] + dados_normalizados
+                    
+                    file_path = garantir_arquivo_letra(selected_label)
+                    with open(file_path, mode='a', newline='') as f:
+                        writer = csv.writer(f)
+                        writer.writerow(linha_csv)
+                    
+                    amostras_gravadas[selected_label] += 1
+                    
+                    # Feedback visual
+                    cv2.circle(image, (largura - 30, 40), 15, config.COLOR_GREEN, -1)
+                    
+                except Exception as e:
+                    logger.error(f"Erro ao salvar amostra: {e}")
+
+        cap.release()
+        cv2.destroyAllWindows()
+        
+        # Relatório final
+        print("\n" + "=" * 50)
+        print("RELATÓRIO DE COLETA")
+        print("=" * 50)
+        total = 0
+        for letra, qtd in sorted(amostras_gravadas.items()):
+            if qtd > 0:
+                print(f"  {letra}: {qtd} amostras")
+                total += qtd
+        print(f"\nTotal: {total} amostras coletadas")
+        print("=" * 50)
+        logger.info(f"Coleta finalizada. Total: {total} amostras")
+        
+    except Exception as e:
+        logger.error(f"Erro fatal no coletor: {e}", exc_info=True)
+        print(f"\nERRO FATAL: {e}")
 
 if __name__ == "__main__":
     main()

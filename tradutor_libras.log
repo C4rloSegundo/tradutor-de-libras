@@ -1,0 +1,41 @@
+2026-01-27 21:00:35,765 - __main__ - INFO - Iniciando Tradutor de Libras...
+2026-01-27 21:00:36,601 - __main__ - INFO - Câmera inicializada com sucesso
+2026-01-27 21:00:36,601 - adapters.mediapipe_adapter - ERROR - Erro ao inicializar MediaPipe: module 'mediapipe' has no attribute 'solutions'
+2026-01-27 21:00:36,602 - __main__ - ERROR - Erro fatal: module 'mediapipe' has no attribute 'solutions'
+Traceback (most recent call last):
+  File "C:\Users\Thiago\Documents\GitHub\tradutor-de-libras\main.py", line 79, in main
+    detector = MediaPipeAdapter()
+  File "C:\Users\Thiago\Documents\GitHub\tradutor-de-libras\adapters\mediapipe_adapter.py", line 16, in __init__
+    self.mp_hands = mp.solutions.hands
+                    ^^^^^^^^^^^^
+AttributeError: module 'mediapipe' has no attribute 'solutions'
+2026-01-27 21:00:44,038 - __main__ - INFO - Iniciando Tradutor de Libras...
+2026-01-27 21:00:44,739 - __main__ - INFO - Câmera inicializada com sucesso
+2026-01-27 21:00:44,740 - adapters.mediapipe_adapter - ERROR - Erro ao inicializar MediaPipe: module 'mediapipe' has no attribute 'solutions'
+2026-01-27 21:00:44,740 - __main__ - ERROR - Erro fatal: module 'mediapipe' has no attribute 'solutions'
+Traceback (most recent call last):
+  File "C:\Users\Thiago\Documents\GitHub\tradutor-de-libras\main.py", line 79, in main
+    detector = MediaPipeAdapter()
+  File "C:\Users\Thiago\Documents\GitHub\tradutor-de-libras\adapters\mediapipe_adapter.py", line 16, in __init__
+    self.mp_hands = mp.solutions.hands
+                    ^^^^^^^^^^^^
+AttributeError: module 'mediapipe' has no attribute 'solutions'
+2026-01-27 21:03:30,839 - __main__ - INFO - Iniciando Tradutor de Libras...
+2026-01-27 21:03:31,495 - __main__ - INFO - Câmera inicializada com sucesso
+2026-01-27 21:03:31,519 - adapters.mediapipe_adapter - INFO - Baixando modelo do MediaPipe...
+2026-01-27 21:03:32,165 - adapters.mediapipe_adapter - INFO - Modelo baixado com sucesso
+2026-01-27 21:03:32,372 - adapters.mediapipe_adapter - INFO - MediaPipe inicializado com sucesso
+2026-01-27 21:03:34,118 - adapters.sklearn_adapter - INFO - Modelo carregado com sucesso: C:\Users\Thiago\Documents\GitHub\tradutor-de-libras\hand_model.joblib
+2026-01-27 21:03:34,119 - core.use_cases - INFO - ReconhecerSinalUseCase inicializado (buffer=30)
+2026-01-27 21:03:34,119 - __main__ - INFO - Sistema pronto. Pressione 'Q' para sair.
+2026-01-27 21:03:52,877 - core.use_cases - INFO - Letra adicionada: Q
+2026-01-27 21:04:19,352 - core.use_cases - INFO - Letra adicionada: R
+2026-01-27 21:04:20,098 - core.use_cases - INFO - Frase limpa
+2026-01-27 21:04:20,953 - core.use_cases - INFO - Frase limpa
+2026-01-27 21:04:23,271 - __main__ - INFO - Sistema pausado
+2026-01-27 21:04:24,040 - __main__ - INFO - Sistema retomado
+2026-01-27 21:04:24,590 - __main__ - INFO - Sistema pausado
+2026-01-27 21:04:25,773 - __main__ - INFO - Sistema retomado
+2026-01-27 21:04:31,273 - core.use_cases - INFO - Letra adicionada: O
+2026-01-27 21:04:55,229 - __main__ - INFO - Encerrando por comando do usuário
+2026-01-27 21:04:55,500 - __main__ - INFO - Tradutor encerrado com sucesso

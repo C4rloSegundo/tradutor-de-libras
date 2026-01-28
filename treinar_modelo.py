@@ -5,33 +5,49 @@ import joblib
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import logging
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+import config
 
-# Configurações
-DATA_DIR = 'dados_letras'
-MODEL_FILE = 'hand_model.joblib'
-CONFUSION_MATRIX_FILE = 'matriz_confusao.png'
+# Configurar logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 def carregar_dados():
-    print("Carregando dados CSV...")
-    # Pega todos os arquivos .csv na pasta dados_letras
-    csv_files = glob.glob(os.path.join(DATA_DIR, '*.csv'))
+    """Carrega todos os arquivos CSV da pasta de dados.
+    
+    Returns:
+        DataFrame do pandas com todos os dados concatenados.
+        
+    Raises:
+        SystemExit: Se nenhum arquivo CSV for encontrado.
+    """
+    logger.info("Carregando dados CSV...")
+    csv_files = glob.glob(os.path.join(config.DATA_DIR, '*.csv'))
     
     if not csv_files:
-        print(f"ERRO: Nenhum arquivo CSV encontrado em '{DATA_DIR}'. Rode o coletor_dados.py primeiro!")
-        exit()
+        logger.error(f"Nenhum arquivo CSV encontrado em '{config.DATA_DIR}'")
+        print(f"ERRO: Nenhum arquivo CSV encontrado em '{config.DATA_DIR}'.")
+        print("Execute o coletor_dados.py primeiro para capturar sinais!")
+        exit(1)
 
     dataframes = []
     for f in csv_files:
-        df = pd.read_csv(f)
-        dataframes.append(df)
+        try:
+            df = pd.read_csv(f)
+            dataframes.append(df)
+            logger.info(f"Carregado: {os.path.basename(f)} ({len(df)} amostras)")
+        except Exception as e:
+            logger.error(f"Erro ao carregar {f}: {e}")
     
-    # Junta tudo num tabelão só
     full_data = pd.concat(dataframes, ignore_index=True)
-    print(f"   Total de amostras: {len(full_data)}")
-    print(f"   Classes encontradas: {full_data['label'].unique()}")
+    logger.info(f"Total de amostras: {len(full_data)}")
+    logger.info(f"Classes encontradas: {sorted(full_data['label'].unique())}")
     return full_data
 
 def treinar():
@@ -74,15 +90,15 @@ def treinar():
     plt.xlabel('Previsão do Modelo')
     
     # Salva a imagem
-    plt.savefig(CONFUSION_MATRIX_FILE)
-    print(f"   Gráfico salvo como '{CONFUSION_MATRIX_FILE}'. Coloque isso no seu PDF!")
+    plt.savefig(config.CONFUSION_MATRIX_FILE)
+    print(f"   Gráfico salvo como '{config.CONFUSION_MATRIX_FILE}'. Coloque isso no seu PDF!")
     
     # (Opcional) Mostra na tela
     # plt.show() 
 
     # 5. Salvar Modelo
-    joblib.dump(model, MODEL_FILE)
-    print(f"\nSUCESSO: Modelo salvo em '{MODEL_FILE}'")
+    joblib.dump(model, config.MODEL_FILE)
+    print(f"\nSUCESSO: Modelo salvo em '{config.MODEL_FILE}'")
 
 if __name__ == "__main__":
     treinar()
