@@ -44,3 +44,14 @@ class ReconhecerSinalUseCase:
             self.contagem = 0
             
         return "".join(self.buffer_letras)
+    
+    def adicionar_espaco(self):
+        """Adiciona um espaço à frase."""
+        if self.buffer_letras and self.buffer_letras[-1] != " ":
+            self.buffer_letras.append(" ")
+    
+    def limpar_frase(self):
+        """Limpa toda a frase."""
+        self.buffer_letras = []
+        self.contagem = 0
+        self.letra_atual = ""

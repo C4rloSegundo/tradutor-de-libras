@@ -39,7 +39,14 @@ def main():
         cv2.rectangle(frame, (10, 60), (10 + (resultado['progresso'] * 10), 70), (0, 255, 0), -1)
 
         cv2.imshow("Clean Architecture TCC", frame)
-        if cv2.waitKey(5) & 0xFF == ord('q'): break
+        
+        key = cv2.waitKey(5) & 0xFF
+        if key == ord('q'):
+            break
+        elif key == ord(' '):  # Espaço
+            use_case.adicionar_espaco()
+        elif key == ord('c'):  # Limpar
+            use_case.limpar_frase()
 
     video.release()
     cv2.destroyAllWindows()
